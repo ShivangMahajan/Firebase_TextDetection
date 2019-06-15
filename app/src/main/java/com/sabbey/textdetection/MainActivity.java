@@ -3,6 +3,7 @@ package com.sabbey.textdetection;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Camera;
+import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -22,12 +23,14 @@ import com.google.firebase.ml.vision.document.FirebaseVisionDocumentTextRecogniz
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button button;
+    Button button, imagePicker;
     final int CAMERA = 4;
+    final int GALLERY = 3;
     FirebaseVisionImage image;
     FirebaseVisionTextRecognizer detector;
 
@@ -37,11 +40,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         button = findViewById(R.id.openCamera);
+        imagePicker = findViewById(R.id.imagePicker);
 
         detector = FirebaseVision.getInstance()
                 .getOnDeviceTextRecognizer();
 
         onCamera();
+        onImagePicker();
     }
 
     public void onCamera(){
@@ -56,9 +61,33 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public void onImagePicker(){
+
+        imagePicker.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent intent = new Intent(Intent.ACTION_PICK);
+                intent.setType("image/*");
+                startActivityForResult(intent, GALLERY);
+            }
+        });
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == GALLERY && resultCode == RESULT_OK)
+        {
+            Uri uri = data.getData();
+            try {
+                image = FirebaseVisionImage.fromFilePath(MainActivity.this, uri);
+                detect(image);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         if (requestCode == CAMERA && resultCode == RESULT_OK)
         {
